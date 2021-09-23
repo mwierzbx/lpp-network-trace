@@ -42,15 +42,13 @@ function calculateBandwidth( bwArray ) {
     const sorted = bwArray.sort( compareNumbers );
     log( 'debug', 'sorted: ' + sorted, 'calculateBandwidth' );
 
-    // remove bottom ~22% of results
-    let threshold = Math.round( sorted.length * 0.22 );
-    let filtered = sorted.filter( ( el, idx ) => idx >= threshold );
+    // remove ~20% bottom and ~10% top of results
+    let bottom = Math.round( sorted.length * 0.2 );
+    let top = sorted.length - Math.round( sorted.length * 0.1 );
+    let filtered = sorted.filter( ( el, idx ) => ( idx > bottom && idx <= top ) );
 
     let ret;
     if ( filtered.length > 2 ) {
-        // remove 2 fastest results
-        threshold = filtered.length - 2;
-        filtered = filtered.filter( ( el, idx ) => idx < threshold );
         log( 'debug', 'filtered: ' + filtered, 'calculateBandwidth' );
         ret = Math.round( filtered.reduce( ( a, b ) => ( a + b ) ) / filtered.length );
         log( 'debug', 'average bandwidth: ' + ret + ' kbps',
@@ -150,13 +148,23 @@ function getDlBw( limitKbytes, maxTimeSec, url, onprogress ) {
             let kbps = ( bits / 1024 ) / durationSec;
             kbps = Math.floor( kbps );
 
-            bandwidthKbpsArray.push( kbps );
+	    let skip = false;
+	    if ( durationSec < 0.06 ) {
+		// accept sample if downloading took ~50ms
+                bandwidthKbpsArray.push( kbps );
+	    } else {
+		skip = true;
+	    }
 
             if ( DEBUG === true ) {
+		let s = '';
+		if ( skip ) {
+		    s = ' (ignored sample!)';
+		}
                 log( 'debug', 'received bytes: ' + receivedBytes +
                     ', duration: ' + durationSec + ' sec' +
                     ', total bytes: ' + totalReceivedBytes +
-                    ', bw: ' + kbps + ' kbps', 'XMLHttpRequest.onprogress' );
+                    ', bw: ' + kbps + ' kbps' + s, 'XMLHttpRequest.onprogress' );
             }
 
             totalDurationSec =
