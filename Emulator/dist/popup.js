@@ -17,6 +17,7 @@ limitations under the License.
 
 /* eslint max-len: ["error", { "code": 200 }] */
 
+let speed = 1;
 let chart = {};
 let mainTimer;
 let time = [];
@@ -71,6 +72,18 @@ async function sendConditions(tab, BW) {
     displayErrorMsg(e.message);
   }
 }
+/**
+* Handler for speed slider move
+*
+* @return {undefined}
+*/
+ 
+function speedSliderMove() {
+    document.getElementById('speed').innerHTML = this.value;
+    speed = document.getElementById('speedSlider').value;
+
+}
+
 
 /**
  *  Handler for slinder move
@@ -126,6 +139,10 @@ function sliderMove() {
   }
 }
 document.getElementById('myRange').addEventListener('input', sliderMove);
+document.getElementById('speedSlider').addEventListener('input', speedSliderMove);
+document.getElementById('speed').innerHTML = speed;
+
+
 
 /**
  *  Clear all resources and back to the initial state
@@ -150,7 +167,9 @@ function clearAll() {
   id = 0;
   delta = 0;
   document.getElementById('myRange').hidden = true;
+  document.getElementById('speedSlider').hidden = true;
   document.getElementById('demo').hidden = true;
+  document.getElementById('speed').hidden = true;
   document.querySelector('.js-cancel').disabled = true;
   document.querySelector('.js-pause').disabled = true;
   isPaused = false;
@@ -340,7 +359,12 @@ async function onEnableThrottling(JsonFile) {
       const testTime = time[time.length - 1] - time[0];
       document.getElementById('myRange').max = testTime / 1000;
       document.getElementById('myRange').hidden = false;
+      document.getElementById('speedSlider').hidden = false;
       document.getElementById('demo').hidden = false;
+      document.getElementById('speed').hidden = false;
+      speed = 1;
+      document.getElementById('speed').innerHTML = speed;
+      document.getElementById('speedSlider').value = speed;
       chart = new Chart(ctx, {
 
         type: 'line',
@@ -469,8 +493,8 @@ async function onEnableThrottling(JsonFile) {
           delta = time[id + 1] - time[id] + delta;
           id += 1;
         }
-
-        if ((today.getTime() - counter.getTime()) > 1000) {
+		
+        if ((today.getTime() - counter.getTime()) > (1000/speed)) {
           chart.annotation.elements.testline.options.value += 1;
           document.getElementById('myRange').value = chart.annotation.elements.testline.options.value;
 		  if(!isNaN(document.getElementById('myRange').value))
@@ -513,7 +537,8 @@ async function onEnableThrottling(JsonFile) {
           });
 
           chart.update();
-          counter.setSeconds(counter.getSeconds() + 1);
+  
+          counter = new Date(counter.getTime() + Math.round(1000/speed));
         }
 
         if (id > time.length - 1) {
